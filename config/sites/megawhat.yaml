@@ -1,0 +1,10 @@
+site: megawhat
+type: rss
+url: https://megawhat.uol.com.br/feed/
+
+language: pt-BR
+category: energy
+
+nlp:
+  enabled: true
+  prompt_override: null

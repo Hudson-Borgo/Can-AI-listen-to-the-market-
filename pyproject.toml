@@ -3,4 +3,8 @@ name = "can-ai-listen-to-the-market"
 version = "0.1.0"
 description = "POC para monitoramento de notícias e geração de sinal de mercado de energia."
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "feedparser>=6.0.14",
+    "pyyaml>=6.0.3",
+]
