@@ -1,8 +1,8 @@
-from html import unescape
+#from html import unescape
 
 import feedparser
 import yaml
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 
 
 #efine o caminho do arquivo de configuração do site
@@ -17,62 +17,45 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as file:
 RSS_URL = cfg["url"]
 
 
-def clean_html(value: str | None) -> str:
-    # Se não vier valor retorna vazio
-    if not value:
-        return ""
-
-    # Converte o HTML em texto limpo usando BeautifulSoup
-    soup = BeautifulSoup(value, "html.parser")
-    text = soup.get_text(" ", strip=True)
-
-    #remove coisas de HTML como && <>  e outros codigos especiais
-    text = unescape(text)
-
-    #troca espaços especiais por espaço normal 
-    text = text.replace("\xa0", " ")
-
-    #remove espaços extras e quebras de linha em excesso
-    text = " ".join(text.split())
-
-    #re o texto tiver a frase "O post " remove tudo depois dela
-    if "O post " in text:
-        text = text.split("O post ")[0].strip()
-
-    return text
-
-
+# Define uma funcao para coletar noticias.
 def collect_news(limit: int = 10) -> list[dict]:
-    # Faz o parse do feed RSS usando a URL configurada
-    feed = feedparser.parse(RSS_URL)
+    """Coleta noticias do feed RSS do site MegaWhat."""
+    #feed RSS configurado.
+    feed = feedparser.parse(cfg["url"])
 
-    #lista para guardar as notícias
+    # Cria uma lista vazia para armazenar as noticias.
     news = []
 
-    # Percorre as entradas do feed, até o limite informado
+    # Percorre as noticias ate o limite informado.
     for entry in feed.entries[:limit]:
-        # Cria um dicionário com os dados da notícia
+        # Cria um dicionario com os dados da noticia.
         item = {
-            "source": cfg["site"],  # Nome do site
-            "title": clean_html(entry.get("title")),  # Título limpo
-            "url": entry.get("link", ""),  # Link da notícia
-            "published_at": entry.get("published", ""),  # Data de publicação
-            "summary": clean_html(entry.get("summary")),  # Resumo limpo
+            # Adiciona o nome do site.
+            "source": cfg["site"],
+            # Adiciona o titulo da noticia.
+            "title": entry.get("title", ""),
+            # Adiciona o resumo da noticia.
+            "summary": entry.get("summary", ""),
+            # Adiciona o link da noticia.
+            "url": entry.get("link", ""),
+            # Adiciona a data de publicacao.
+            "published_at": entry.get("published", ""),
         }
 
-        # Adiciona a notícia na lista
+        # Adiciona a noticia a lista final.
         news.append(item)
 
+    # Retorna todas as noticias coletadas.
     return news
 
-
-def main(): #somente para teste
-    #Busca ate3 notícias
+from src.normalization.megawhat import normalize_news
+def main():
     news = collect_news(limit=3)
 
-    # Mostra cada item da lista
     for item in news:
-        print(item)
+        normalized = normalize_news(item)
+
+        print(normalized)
         print("-" * 80)
 
 
