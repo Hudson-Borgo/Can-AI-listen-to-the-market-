@@ -44,13 +44,13 @@ O objetivo não é construir uma plataforma de produção, mas demonstrar a viab
       Microsoft Foundry
              │
              ▼
-     Signal Aggregator
+        Index + Signal
              │
              ▼
-      Termômetro B3
-             │
-             ▼
-           API
+        ┌─────────────┐
+        ▼             ▼
+       API         Dashboard
+
 ```
 
 
@@ -75,10 +75,10 @@ Todos os coletores devem produzir notícias utilizando a mesma estrutura lógica
 {
     "source": "...",
     "title": "...",
+    "summary": "...",
     "url": "...",
     "published_at": "...",
-    "summary": "...",
-    "content": "..."
+    "fetched_at": "..."
 }
 ```
 
@@ -112,10 +112,10 @@ Criar uma função comum para normalizar:
 
 * source;
 * title;
-* URL;
-* published_at;
 * summary;
-* content.
+* url;
+* published_at;
+* fetched_at.
 
 ### Etapa 3 — Persistência
 
