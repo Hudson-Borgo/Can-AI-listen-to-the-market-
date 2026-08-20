@@ -3,13 +3,12 @@ from pathlib import Path
 import pandas as pd
 
 
-
-NEWS_PATH = Path("data/processed/news.csv")
+NEWS_DIR = Path("data/processed")
 
 
 # Salva noticias novas e evita registros duplicados.
 def save_news(news: list[dict]) -> dict:
-    """Salva as noticias normalizadas no arquivo CSV."""
+    """Salva as noticias normalizadas em um CSV por categoria."""
 
     received = len(news)
 
@@ -22,53 +21,42 @@ def save_news(news: list[dict]) -> dict:
             "total": 0,
         }
 
-  
-    new_df = pd.DataFrame(news)
+    categories = {item.get("category", "").strip() for item in news}
+    if "" in categories:
+        raise ValueError("Todas as noticias devem informar uma categoria.")
 
-    PK = ["title", "url", "published_at"]
+    primary_key = ["title", "url", "published_at"]
+    inserted = 0
+    total = 0
 
-    # Verifica se ja existe um repositorio salvo.
-    if NEWS_PATH.exists():
-        current_df = pd.read_csv(NEWS_PATH)
+    # Cada categoria tem seu proprio conjunto de duplicatas e arquivo de destino.
+    for category in categories:
+        category_news = [item for item in news if item["category"].strip() == category]
+        new_df = pd.DataFrame(category_news)
+        news_path = NEWS_DIR / f"{category}.csv"
 
-        # Composite key as a frozenset of tuples to handle missing columns gracefully.
-        existing_keys = set(
-            current_df[PK].fillna("").itertuples(index=False, name=None)
-        )
+        if news_path.exists():
+            current_df = pd.read_csv(news_path)
+            existing_keys = set(
+                current_df[primary_key].fillna("").itertuples(index=False, name=None)
+            )
+            mask = new_df[primary_key].fillna("").apply(
+                lambda row: tuple(row) not in existing_keys, axis=1
+            )
+            new_df = new_df[mask]
+            final_df = pd.concat([current_df, new_df], ignore_index=True)
+        else:
+            final_df = new_df
 
-        mask = new_df[PK].fillna("").apply(
-            lambda row: tuple(row) not in existing_keys, axis=1
-        )
-        new_df = new_df[mask]
-
-        inserted = len(new_df)
-
-        final_df = pd.concat(
-            [current_df, new_df],
-            ignore_index=True,
-        )
-
-    else:
-        # Quando o arquivo nao existe, todas as noticias sao novas.
-        inserted = len(new_df)
-        final_df = new_df
-
-    # Cria a pasta de destino caso ela ainda nao exista.
-    NEWS_PATH.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    # Salva a tabela completa no arquivo CSV.
-    final_df.to_csv(
-        NEWS_PATH,
-        index=False,
-    )
+        inserted += len(new_df)
+        total += len(final_df)
+        NEWS_DIR.mkdir(parents=True, exist_ok=True)
+        final_df.to_csv(news_path, index=False)
 
     # Retorna os numeros para o pipeline exibir no terminal.
     return {
         "received": received,
         "inserted": inserted,
         "duplicates": received - inserted,
-        "total": len(final_df),
+        "total": total,
     }

@@ -3,7 +3,7 @@ type: rss
 url: https://megawhat.uol.com.br/feed/
 
 language: pt-BR
-category: energy
+category: energy_br
 
 nlp:
   enabled: true
