@@ -9,12 +9,15 @@ from src.nlp.prompts.energy_br import SYSTEM_PROMPT
 DATA_PATH = Path("data/processed")
 
 
-def process_category(category: str) -> None:
+def process_category(
+    category: str,
+    show_header: bool = True,) -> None:
 
     csv_path = DATA_PATH / f"{category}.csv"
 
-    print("\n" + "=" * 70)
-    print("  AI MARKET ANALYSIS")
+    if show_header:
+        print("\n" + "=" * 70)
+        print("  AI MARKET ANALYSIS")
     print("=" * 70)
 
     print(f"\nCategory : {category}")
