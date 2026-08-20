@@ -1,0 +1,10 @@
+site: jornaldenegocios
+type: rss
+url: https://www.jornaldenegocios.pt/rss
+
+language: pt-pt
+category: real_estate
+
+nlp:
+  enabled: true
+  prompt_override: null

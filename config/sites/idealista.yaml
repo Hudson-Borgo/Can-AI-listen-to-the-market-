@@ -1,0 +1,10 @@
+site: idealista
+type: rss
+url: https://www.idealista.pt/news/rss/v2/latest-news.xml
+
+language: pt-pt
+category: real_estate
+
+nlp:
+  enabled: true
+  prompt_override: null

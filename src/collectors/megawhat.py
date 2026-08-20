@@ -40,6 +40,7 @@ def collect_news(limit: int = 10) -> list[dict]:
             "url": entry.get("link", ""),
             # Adiciona a data de publicacao.
             "published_at": entry.get("published", ""),
+            "category": cfg["category"],
         }
 
         # Adiciona a noticia a lista final.

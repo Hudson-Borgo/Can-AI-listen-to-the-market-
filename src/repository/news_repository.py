@@ -25,20 +25,22 @@ def save_news(news: list[dict]) -> dict:
   
     new_df = pd.DataFrame(news)
 
+    PK = ["title", "url", "published_at"]
+
     # Verifica se ja existe um repositorio salvo.
     if NEWS_PATH.exists():
-        # Carrega as noticias que ja foram salvas.
         current_df = pd.read_csv(NEWS_PATH)
 
-        # Guarda os links existentes para identificar duplicatas.
-        existing_urls = set(current_df["url"].dropna())
+        # Composite key as a frozenset of tuples to handle missing columns gracefully.
+        existing_keys = set(
+            current_df[PK].fillna("").itertuples(index=False, name=None)
+        )
 
-        # Mantem apenas noticias com links ainda nao registrados.
-        new_df = new_df[
-            ~new_df["url"].isin(existing_urls)
-        ]
+        mask = new_df[PK].fillna("").apply(
+            lambda row: tuple(row) not in existing_keys, axis=1
+        )
+        new_df = new_df[mask]
 
-        # Junta as noticias antigas com as novas.
         inserted = len(new_df)
 
         final_df = pd.concat(
