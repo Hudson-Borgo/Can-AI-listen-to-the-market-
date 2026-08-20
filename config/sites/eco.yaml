@@ -1,0 +1,10 @@
+site: eco
+type: rss
+url: https://eco.sapo.pt/feed/
+
+language: pt-PT
+category: real_estate
+
+nlp:
+  enabled: true
+  prompt_override: null
