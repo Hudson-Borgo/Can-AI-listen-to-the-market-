@@ -1,76 +1,72 @@
 # Can AI Listen to the Market?
 
-Monitoramento automatizado de notícias geração de um indicador/índice de mercado utilizando NLP e modelos de linguagem.
+Monitoramento automatizado de notícias e geração de um indicador diário de sentimento de mercado utilizando **Python, NLP/LLM e Microsoft Foundry**.
 
-## Objetivo
-
-Construir uma solução simples e modular capaz de:
-
-1. Coletar notícias de diferentes portais financeiros.
-2. Normalizar os dados em um formato comum.
-3. Armazenar as notícias processadas.
-4. Analisar relevância, sentimento e impacto esperado utilizando NLP/LLM.
-5. Agregar os resultados em um indicador de tendência do mercado de energia.
-6. Expor o indicador por meio de uma API.
-
-O objetivo não é construir uma plataforma de produção, mas demonstrar a viabilidade e potencial técnico da solução.
+O objetivo é demonstrar a possibilidade de transformar notícias de diferentes fontes em um sinal estruturado de mercado.
 
 ---
 
 ## Arquitetura
 
 ```text
-        News Sources
-             │
-     ┌───────┼───────┐
-     │       │       │
-     ▼       ▼       ▼
-   RSS     RSS     RSS
-     │       │       │
-     └───────┼───────┘
-             │
-             ▼
-         Collectors
-             │
-             ▼
-       Normalization
-             │
-             ▼
-      News Repository
-            CSV
-             │
-             ▼
-         NLP / LLM
-      Microsoft Foundry
-             │
-             ▼
-        Index + Signal
-             │
-             ▼
-        ┌─────────────┐
-        ▼             ▼
-       API         Dashboard
-
+News Sources (RSS)
+        │
+        ▼
+    Collectors
+        │
+        ▼
+  Normalization
+        │
+        ▼
+ News Repository
+ CSV por categoria
+        │
+        ▼
+     NLP / LLM
+ Microsoft Foundry
+   GPT-5.4-mini
+        │
+        ▼
+ sentiment
+ score
+ relevance
+ reason
+        │
+        ▼
+ Signal Aggregator
+        │
+        ▼
+ Daily Market Signal
+     [-1, +1]
+        │
+        ▼
+ Streamlit Dashboard
 ```
-
-
-
-## Fontes de notícias
-
-### MegaWhat
-
-```text
-https://megawhat.uol.com.br/feed/
-```
-### OUTRA (ADICIONAR)
 
 ---
 
-## Output dos coletores
+## Fluxo
 
-Todos os coletores devem produzir notícias utilizando a mesma estrutura lógica:
+### 1. Coleta
 
-### Exeplo/sugestão:
+Cada fonte possui seu próprio collector em:
+
+```text
+src/collectors/
+```
+
+Os collectors acessam os feeds RSS e extraem as notícias disponíveis.
+
+### 2. Normalização
+
+Cada fonte possui seu normalizador em:
+
+```text
+src/normalization/
+```
+
+Independentemente da estrutura original do RSS, todas as notícias são convertidas para o contrato:
+
 ```python
 {
     "source": "...",
@@ -82,56 +78,185 @@ Todos os coletores devem produzir notícias utilizando a mesma estrutura lógica
 }
 ```
 
+### 3. Persistência
 
----
-
-Evitar commits diretamente na `main`.
-
----
-
-## Etapas
-
-### Etapa 1 — Coleta
-
-Implementar o primeiro coletor:
+As notícias normalizadas são armazenadas por categoria em:
 
 ```text
-MegaWhat RSS
+data/processed/
 ```
 
-Responsabilidades:
+Exemplos:
 
-* ler o RSS;
-* identificar os campos disponíveis;
-* converter cada notícia para o contrato comum;
-* validar os resultados localmente.
+```text
+energy_br.csv
+real_estate.csv
+```
 
-### Etapa 2 — Normalização
+O repository também evita duplicação de notícias já coletadas.
 
-Criar uma função comum para normalizar:
+### 4. NLP / LLM
 
-* source;
-* title;
-* summary;
-* url;
-* published_at;
-* fetched_at.
+As notícias ainda não analisadas são enviadas ao modelo **GPT-5.4-mini** via Microsoft Foundry.
 
-### Etapa 3 — Persistência
+Para cada notícia, o modelo retorna:
 
-Salvar as notícias normalizadas inicialmente em CSV.
+```json
+{
+    "sentiment": "positive | neutral | negative",
+    "score": -1.0,
+    "relevance": 0.0,
+    "reason": "..."
+}
+```
 
-### Etapa 4 — NLP / LLM
+Onde:
 
-Integrar Microsoft Foundry para avaliar:
+- `sentiment`: classificação do impacto;
+- `score`: intensidade e direção do sentimento, entre -1 e +1;
+- `relevance`: relevância da notícia para o mercado analisado, entre 0 e 1;
+- `reason`: justificativa da classificação.
 
-* relevância para o mercado de energia;
-* sentimento;
-* impacto esperado;
-* confiança da análise.
+### 5. Signal Aggregator
 
-### Etapa 5 — Interpretador
+O indicador é calculado diariamente utilizando a data de publicação das notícias.
 
-Transformar os resultados individuais das notícias em um indicador agregado.
+```text
+Σ(score × relevance)
+────────────────────
+    Σ(relevance)
+```
 
-### Etapa 6 — API
+Classificação utilizada na POC:
+
+```text
+signal < -0.15            NEGATIVE
+-0.15 <= signal <= 0.15   NEUTRAL
+signal > 0.15             POSITIVE
+```
+
+Os thresholds são heurísticos e não foram calibrados historicamente.
+
+### 6. Dashboard
+
+O dashboard Streamlit apresenta:
+
+- sinal diário;
+- histórico do indicador;
+- quantidade de notícias analisadas;
+- relevância média;
+- distribuição de sentimento;
+- feed das notícias;
+- score, relevância e justificativa produzidos pelo LLM.
+
+---
+
+## Estrutura do projeto
+
+```text
+config/
+└── sites/                 # Configuração das fontes
+
+data/
+└── processed/             # CSVs por categoria
+
+src/
+├── collectors/            # Coleta RSS
+├── normalization/         # Normalização por fonte
+├── repository/            # Persistência e deduplicação
+├── nlp/                   # Integração com LLM
+├── signals/               # Cálculo do indicador
+├── dashboard/             # Dashboard Streamlit
+└── pipeline.py            # Orquestração do pipeline
+```
+
+---
+
+## Configuração
+
+O projeto utiliza [uv](https://docs.astral.sh/uv/) para gerenciamento do ambiente e dependências.
+
+Clone o repositório:
+
+```bash
+git clone https://github.com/Hudson-Borgo/Can-AI-listen-to-the-market-.git
+cd Can-AI-listen-to-the-market-
+```
+
+Instale as dependências:
+
+```bash
+uv sync
+```
+
+Crie o arquivo `.env` a partir do exemplo:
+
+```bash
+cp .env.example .env
+```
+
+Configure no `.env` as credenciais necessárias para acesso ao Azure OpenAI / Microsoft Foundry.
+
+---
+
+## Executando o pipeline
+
+Na raiz do projeto:
+
+```bash
+uv run python -m src.pipeline
+```
+
+O pipeline executa sequencialmente:
+
+```text
+Collect
+   ↓
+Normalize
+   ↓
+Persist / Deduplicate
+   ↓
+LLM Analysis
+   ↓
+Daily Market Signal
+```
+
+---
+
+## Executando componentes isoladamente
+
+Collector MegaWhat:
+
+```bash
+uv run python -m src.collectors.megawhat
+```
+
+NLP:
+
+```bash
+uv run python -m src.nlp.process_category
+```
+
+Signal Aggregator:
+
+```bash
+uv run python -m src.signals.aggregate
+```
+
+---
+
+## Executando o dashboard
+
+Na raiz do projeto:
+
+```bash
+PYTHONPATH=. uv run streamlit run src/dashboard/app.py
+```
+
+O Streamlit disponibilizará o dashboard localmente, normalmente em:
+
+```text
+http://localhost:8501
+```
+
+---

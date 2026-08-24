@@ -9,7 +9,7 @@ from src.normalization.eco import normalize_news as normalize_eco
 from src.normalization.jornaldenegocios import normalize_news as normalize_jornaldenegocios
 
 from src.repository.news_repository import save_news
-
+from src.signals.aggregate import calculate_daily_signals
 # Responsavel por ler o CSV da categoria e enviar apenas as noticias
 # ainda nao analisadas para o modelo no Azure OpenAI / Foundry.
 from src.nlp.process_category import process_category
@@ -217,6 +217,68 @@ def main():
         "energy_br",
         show_header=False,
     )
+
+    # =========================================================
+    # 8. DAILY MARKET SIGNAL
+    # =========================================================
+    # Chama:
+    # src/signals/aggregate.py
+    #
+    # Responsabilidade:
+    # - ler as noticias ja analisadas pelo LLM;
+    # - agrupar as noticias por published_at;
+    # - ponderar o score pela relevancia;
+    # - calcular o sinal diario entre -1 e +1;
+    # - classificar a tendencia como:
+    #   NEGATIVE, NEUTRAL ou POSITIVE.
+    #
+    # Formula:
+    #
+    #   Σ(score × relevance)
+    #   --------------------
+    #       Σ(relevance)
+    #
+    # O ultimo dia disponivel representa o sinal
+    # mais recente do mercado.
+    # =========================================================
+
+    print("\n[8/8] CALCULATING DAILY MARKET SIGNAL")
+
+    daily_signals = calculate_daily_signals("energy_br")
+
+    current = daily_signals.iloc[-1]
+
+    print(f"      Category          : energy_br")
+    print(f"      Reference date    : {current['date']}")
+    print(f"      Articles analyzed : {current['articles']}")
+    print(
+        f"      Average relevance : "
+        f"{current['average_relevance']:.3f}"
+    )
+
+    print("\n      Weighted formula:")
+    print("      Σ(score × relevance) / Σ(relevance)")
+
+    print(
+        f"\n      MARKET SIGNAL     : "
+        f"{current['signal']:+.3f}"
+    )
+
+    print(
+        f"      MARKET TREND      : "
+        f"{current['trend']}"
+    )
+
+    ########################
+
+    print("\n      " + "-" * 54)
+    print("      -1.0              0.0              +1.0")
+    print("      NEGATIVE        NEUTRAL          POSITIVE")
+    print("      " + "-" * 54)
+
+
+
+
 
     # =========================================================
     # PIPELINE FINISHED
