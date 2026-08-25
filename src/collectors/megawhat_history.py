@@ -3,6 +3,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 import time
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -21,6 +24,48 @@ HEADERS = {
         "Chrome/120 Safari/537.36"
     )
 }
+
+def create_session() -> requests.Session:
+    """
+    Cria uma sessao HTTP reutilizavel com retry automatico.
+    """
+
+    session = requests.Session()
+
+    retry = Retry(
+        total=4,
+        connect=4,
+        read=4,
+        backoff_factor=1,
+        status_forcelist=[
+            429,
+            500,
+            502,
+            503,
+            504,
+        ],
+        allowed_methods=["GET"],
+    )
+
+    adapter = HTTPAdapter(
+        max_retries=retry
+    )
+
+    session.mount(
+        "https://",
+        adapter,
+    )
+
+    session.headers.update(
+        HEADERS
+    )
+
+    return session
+
+
+SESSION = create_session()
+
+
 
 
 def parse_args():
@@ -59,14 +104,33 @@ def get_page_url(page: int) -> str:
     return f"{BASE_URL}page/{page}/"
 
 
-def get_article_published_at(url: str) -> str:
-    response = requests.get(
-        url,
-        headers=HEADERS,
-        timeout=30,
-    )
+def get_article_published_at(
+    url: str,
+) -> str:
+    """
+    Abre uma materia e extrai a data oficial de publicacao
+    a partir do metadata article:published_time.
+    """
 
-    response.raise_for_status()
+    try:
+        response = SESSION.get(
+            url,
+            timeout=30,
+        )
+
+        response.raise_for_status()
+
+    except requests.RequestException as error:
+        print(
+            f"      ⚠ Failed to read article: "
+            f"{url}"
+        )
+
+        print(
+            f"        {error}"
+        )
+
+        return ""
 
     soup = BeautifulSoup(
         response.text,
@@ -84,17 +148,14 @@ def get_article_published_at(url: str) -> str:
         return ""
 
     return meta.get(
-        "content",
-        "",
-    )
+        "content","",)
 
 
 def collect_page(page: int) -> list[dict]:
     page_url = get_page_url(page)
 
-    response = requests.get(
+    response = SESSION.get(
         page_url,
-        headers=HEADERS,
         timeout=30,
     )
 
@@ -164,7 +225,7 @@ def collect_page(page: int) -> list[dict]:
 
         # Pequena pausa para não fazer requisições
         # muito agressivas ao site.
-        time.sleep(0.2)
+        time.sleep(0.8)
 
     return news
 
