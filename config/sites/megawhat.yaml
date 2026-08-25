@@ -1,10 +1,8 @@
 site: megawhat
 type: rss
 url: https://megawhat.uol.com.br/feed/
-
-language: pt-BR
 category: energy_br
+language: pt-BR
 
-nlp:
-  enabled: true
-  prompt_override: null
+history:
+  url: https://megawhat.uol.com.br/ultimas-noticias/
