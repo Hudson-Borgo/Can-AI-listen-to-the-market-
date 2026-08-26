@@ -1,5 +1,8 @@
 import json
 import os
+from typing import Optional
+
+from openai import AzureOpenAI
 
 from src.nlp.client import get_client
 
@@ -14,9 +17,11 @@ def analyze_news(
     title: str,
     summary: str,
     system_prompt: str,
+    client: Optional[AzureOpenAI] = None,
 ) -> dict:
 
-    client = get_client()
+    if client is None:
+        client = get_client()
 
     user_input = f"""
 Título:
