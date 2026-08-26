@@ -11,14 +11,15 @@ DATA_PATH = Path("data/processed")
 
 def process_category(
     category: str,
-    show_header: bool = True,) -> None:
+    show_header: bool = True,
+) -> None:
 
     csv_path = DATA_PATH / f"{category}.csv"
 
     if show_header:
         print("\n" + "=" * 70)
         print("  AI MARKET ANALYSIS")
-    print("=" * 70)
+        print("=" * 70)
 
     print(f"\nCategory : {category}")
     print(f"Dataset  : {csv_path}")
@@ -31,7 +32,7 @@ def process_category(
 
     print(f"Articles : {len(df)}")
 
-    # Cria as colunas de NLP caso ainda não existam
+    # Cria as colunas de NLP caso ainda nao existam.
     nlp_columns = [
         "sentiment",
         "score",
@@ -43,10 +44,10 @@ def process_category(
         if column not in df.columns:
             df[column] = None
 
-    # Apenas notícias ainda não processadas
+    # Apenas noticias ainda nao processadas.
     pending = df["sentiment"].isna()
 
-    pending_count = pending.sum()
+    pending_count = int(pending.sum())
 
     print(f"Pending  : {pending_count}")
 
@@ -57,12 +58,13 @@ def process_category(
     print("\nStarting AI analysis...\n")
 
     total = pending_count
-    current = 0
+    processed = 0
+    errors = 0
 
-    for index in df[pending].index:
-
-        current += 1
-
+    for current, index in enumerate(
+        df[pending].index,
+        start=1,
+    ):
         title = df.at[index, "title"]
         summary = df.at[index, "summary"]
 
@@ -82,6 +84,15 @@ def process_category(
             df.at[index, "relevance"] = result["relevance"]
             df.at[index, "reason"] = result["reason"]
 
+            # Checkpoint:
+            # salva imediatamente apos cada analise concluida.
+            df.to_csv(
+                csv_path,
+                index=False,
+            )
+
+            processed += 1
+
             print(
                 f"Result    : "
                 f"{result['sentiment'].upper()} "
@@ -98,17 +109,17 @@ def process_category(
                 f"{result['reason']}"
             )
 
-        except Exception as error:
-            print(f"✗ Error: {error}")
+            print("Saved     : ✓")
 
-    df.to_csv(
-        csv_path,
-        index=False,
-    )
+        except Exception as error:
+            errors += 1
+            print(f"✗ Error: {error}")
 
     print("\n" + "=" * 70)
     print("  ✓ AI ANALYSIS COMPLETED")
-    print(f"  {total} articles processed")
+    print(f"  Processed : {processed}")
+    print(f"  Errors    : {errors}")
+    print(f"  Remaining : {total - processed}")
     print("=" * 70 + "\n")
 
 
