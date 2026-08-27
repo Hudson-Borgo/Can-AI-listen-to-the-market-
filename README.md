@@ -252,6 +252,9 @@ Na raiz do projeto:
 ```bash
 PYTHONPATH=. uv run streamlit run src/dashboard/app.py
 ```
+```bash
+$env:PYTHONPATH="."; uv run streamlit run src/dashboard/app.py
+```
 
 O Streamlit disponibilizará o dashboard localmente, normalmente em:
 
