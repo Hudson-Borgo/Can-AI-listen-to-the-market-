@@ -4,6 +4,12 @@ Monitoramento automatizado de notícias e geração de um indicador diário de s
 
 O objetivo é demonstrar a possibilidade de transformar notícias de diferentes fontes em um sinal estruturado de mercado.
 
+Além do indicador diário, o projeto inclui um experimento preditivo simples e
+temporalmente correto: as informações disponíveis no dia `t` são usadas para
+prever a direção do preço no próximo pregão. A comparação usa o mesmo modelo
+com e sem a feature de notícias, evitando atribuir à IA uma melhora causada por
+mudança de algoritmo.
+
 ---
 
 ## Arquitetura
@@ -38,9 +44,15 @@ News Sources (RSS)
         ▼
  Daily Market Signal
      [-1, +1]
+        ├──────────────► Streamlit Dashboard
         │
         ▼
- Streamlit Dashboard
+  Notebooks de DS
+ EDA + alinhamento temporal
+        │
+        ▼
+ Direção do próximo pregão
+   alta (1) / queda (0)
 ```
 
 ---
@@ -158,7 +170,14 @@ config/
 └── sites/                 # Configuração das fontes
 
 data/
-└── processed/             # CSVs por categoria
+├── processed/             # CSVs de notícias por categoria
+├── market/                # Série diária de mercado
+└── features/              # Bases produzidas pelos notebooks
+
+notebooks/
+├── 01_news_daily_features.ipynb       # Texto vira features numéricas
+├── 02_market_news_eda.ipynb           # EDA, gráficos e alinhamento temporal
+└── 03_next_day_direction_model.ipynb  # Classificação do próximo pregão
 
 src/
 ├── collectors/            # Coleta RSS
@@ -242,6 +261,25 @@ Signal Aggregator:
 ```bash
 uv run python -m src.signals.aggregate
 ```
+
+## Notebooks de Data Science
+
+Execute os notebooks na ordem:
+
+1. `01_news_daily_features.ipynb`: inspeciona e agrega as avaliações do LLM;
+2. `02_market_news_eda.ipynb`: mostra scores, sinais e preço de fechamento,
+   alinha fins de semana ao próximo pregão e gera a base de modelagem;
+3. `03_next_day_direction_model.ipynb`: compara o mesmo classificador com e
+   sem notícias usando validação temporal walk-forward.
+
+O resultado principal é a acurácia média em quatro janelas futuras. Nesta POC,
+o modelo base usa o retorno corrente; o modelo enriquecido adiciona
+`negative_share`, a proporção diária de notícias classificadas pelo LLM como
+negativas. O alvo é `direction_next_day`, derivado de `return_next_day > 0`.
+Nenhuma informação do próximo pregão entra nas features.
+
+> A série é curta. A melhora é uma evidência didática fora da amostra, não uma
+> garantia de desempenho futuro nem uma estratégia de investimento.
 
 ---
 
