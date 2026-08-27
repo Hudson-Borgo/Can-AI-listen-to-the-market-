@@ -10,7 +10,7 @@ def classify_signal(signal: float) -> str:
     """
     Converte o sinal numerico em uma classificacao de tendencia.
 
-    Os thresholds sao heuristicas definidas para a POC:
+    Os thresholds sao heuristicas definidas para:
     abaixo de -0.15  -> NEGATIVE
     entre -0.15 e 0.15 -> NEUTRAL
     acima de 0.15 -> POSITIVE
