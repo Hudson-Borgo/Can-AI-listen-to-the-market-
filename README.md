@@ -177,7 +177,8 @@ data/
 notebooks/
 ├── 01_news_daily_features.ipynb       # Texto vira features numéricas
 ├── 02_market_news_eda.ipynb           # EDA, gráficos e alinhamento temporal
-└── 03_next_day_direction_model.ipynb  # Classificação do próximo pregão
+├── 03_classification_next_day_direction.ipynb       # Modelo de classificação
+└── 04_time_series_sarimax_same_day_price.ipynb      # Modelo de série temporal
 
 src/
 ├── collectors/            # Coleta RSS
@@ -269,8 +270,12 @@ Execute os notebooks na ordem:
 1. `01_news_daily_features.ipynb`: inspeciona e agrega as avaliações do LLM;
 2. `02_market_news_eda.ipynb`: mostra scores, sinais e preço de fechamento,
    alinha fins de semana ao próximo pregão e gera a base de modelagem;
-3. `03_next_day_direction_model.ipynb`: compara o mesmo classificador com e
-   sem notícias usando validação temporal walk-forward.
+3. `03_classification_next_day_direction.ipynb`: compara o mesmo classificador com e
+   sem notícias usando validação temporal walk-forward;
+4. `04_time_series_sarimax_same_day_price.ipynb`: usa `SARIMAX(1,0,0)` com o
+   fechamento anterior como exógena para modelar diretamente o fechamento atual.
+   A versão com IA adiciona um sinal de notícias muito relevantes
+   (`relevance >= 0.85`) suavizado em 7 pregões.
 
 O resultado principal é a acurácia média em quatro janelas futuras. Nesta POC,
 o modelo base usa o retorno corrente; o modelo enriquecido adiciona
@@ -280,6 +285,17 @@ Nenhuma informação do próximo pregão entra nas features.
 
 > A série é curta. A melhora é uma evidência didática fora da amostra, não uma
 > garantia de desempenho futuro nem uma estratégia de investimento.
+
+O notebook 04 é um exercício de *nowcasting*: as notícias do dia ajudam a
+explicar o fechamento do mesmo dia. Sem um horário de corte de publicação, ele
+não deve ser interpretado como uma previsão disponível antes da abertura.
+Na validação walk-forward, os dois notebooks comparam o mesmo algoritmo antes e
+depois de adicionar notícias. Assim, o ganho não é causado por troca de modelo.
+Na base atual, a classificação usa o sinal de alta relevância suavizado em 2
+pregões e melhora a acurácia média de `51.7%` para `60.0%` (`+8.3` pontos). No SARIMAX, as notícias
+reduzem o MAE médio de `13.10` para `11.49` (`12.3%`) e
+o RMSE de `16.81` para `15.60` (`7.2%`). O threshold e a janela de suavização
+foram calibrados nesta amostra e devem permanecer fixos ao validar novos dados.
 
 ---
 
