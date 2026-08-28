@@ -20,7 +20,7 @@ try:
 except ImportError:
     sys.exit("plotly is not installed.  Run: pip install plotly")
 
-SCORE_THRESHOLD = 0.75
+SCORE_THRESHOLD = 0.70
 DEFAULT_NEWS  = Path("data/processed/energy_br.csv")
 DEFAULT_PRICE = Path("data/processed/agg_diária_M1_2026 1.csv")
 OUTPUT_HTML   = Path("data/processed/price_news_overlay.html")
@@ -31,7 +31,7 @@ COLOR_CLOSE = "#2c3e50"
 COLOR_ROLL  = "#8e44ad"
 
 MAX_BAND_OPACITY = 0.18   # per-event ceiling; opacity = |score| * relevance * MAX
-ROLL_WINDOW      = "31D"
+ROLL_WINDOW      = "14D"
 
 
 def load_price(path: Path) -> pd.DataFrame:
@@ -51,7 +51,7 @@ def load_events(path: Path) -> pd.DataFrame:
     return df.sort_values("date").reset_index(drop=True)
 
 
-ROLL_THRESHOLD = 0.5  # only news with |score| > this feed the rolling average
+ROLL_THRESHOLD = 0.3  # only news with |score| > this feed the rolling average
 
 
 def load_rolling_score(path: Path) -> pd.Series:
@@ -171,28 +171,30 @@ def build_figure(
             fillcolor=fill, line_width=0, layer="below",
         ))
 
-    # --- Event markers ---
-    for ev_df, symbol, color, label in (
-        (pos_ev, "triangle-up",   COLOR_POS, f"Positive (≥+{SCORE_THRESHOLD})"),
-        (neg_ev, "triangle-down", COLOR_NEG, f"Negative (≤−{SCORE_THRESHOLD})"),
+    # --- Event markers (alpha = |score| × relevance per marker) ---
+    for ev_df, symbol, rgb, label in (
+        (pos_ev, "triangle-up",   (46, 204, 113), f"Positive (≥+{SCORE_THRESHOLD})"),
+        (neg_ev, "triangle-down", (231, 76,  60), f"Negative (≤−{SCORE_THRESHOLD})"),
     ):
         if ev_df.empty:
             continue
+        alphas = (ev_df["score"].abs() * ev_df["relevance"]).clip(upper=1.0)
+        colors = [f"rgba({rgb[0]},{rgb[1]},{rgb[2]},{a:.3f})" for a in alphas]
         fig.add_trace(
             go.Scatter(
                 x=ev_df["snap_date"],
                 y=ev_df["price_y"],
                 mode="markers",
                 marker=dict(
-                    symbol=symbol, size=11, color=color,
+                    symbol=symbol, size=11, color=colors,
                     line=dict(color="white", width=0.8),
                 ),
                 name=label,
-                customdata=ev_df[["title", "score", "source", "date_str"]].values,
+                customdata=ev_df[["title", "score", "relevance", "source", "date_str"]].values,
                 hovertemplate=(
                     "<b>%{customdata[0]}</b><br>"
-                    "Score: %{customdata[1]:.2f}  ·  %{customdata[2]}<br>"
-                    "Published: %{customdata[3]}<extra></extra>"
+                    "Score: %{customdata[1]:.2f}  ·  Relevance: %{customdata[2]:.2f}<br>"
+                    "%{customdata[3]}  ·  %{customdata[4]}<extra></extra>"
                 ),
             ),
             row=1, col=1,
