@@ -1,0 +1,23 @@
+artifact_path: /Users/hudsonborgo/Desktop/Can-AI-listen-to-the-market-improved/notebooks/mlruns/1/models/m-162cecfe3e234ff3ab576e5f01a1ca31/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.12.12
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.0
+    skops_trusted_types: null
+mlflow_version: 3.15.2
+model_id: m-162cecfe3e234ff3ab576e5f01a1ca31
+model_size_bytes: 8489165
+model_uuid: m-162cecfe3e234ff3ab576e5f01a1ca31
+prompts: null
+run_id: ad535b81c4064f37947f8a6151cd2e32
+utc_time_created: '2026-08-30 21:40:46.652834'

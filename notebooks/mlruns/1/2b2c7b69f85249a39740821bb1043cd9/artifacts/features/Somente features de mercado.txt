@@ -1,0 +1,4 @@
+return
+momentum_ma_5
+volatility_5_lagged
+intraday_range_lag_1

@@ -291,10 +291,11 @@ explicar o fechamento do mesmo dia. Sem um horário de corte de publicação, el
 não deve ser interpretado como uma previsão disponível antes da abertura.
 Na validação walk-forward, os dois notebooks comparam o mesmo algoritmo antes e
 depois de adicionar notícias. Assim, o ganho não é causado por troca de modelo.
-Na base atual, a classificação usa o sinal de alta relevância suavizado em 2
-pregões e melhora a acurácia média de `51.7%` para `60.0%` (`+8.3` pontos). No SARIMAX, as notícias
-reduzem o MAE médio de `13.10` para `11.49` (`12.3%`) e
-o RMSE de `16.81` para `15.60` (`7.2%`). O threshold e a janela de suavização
+Na base atual, a classificação compara 4 features de mercado contra as mesmas
+4 features mais o sinal de notícias; a acurácia média melhora de `52.5%` para
+`58.3%`. No SARIMAX, o baseline usa 3 exógenas históricas de mercado e a versão
+com IA adiciona uma quarta exógena de notícias; o MAE cai de `12.41` para `11.80`
+(`5.0%`) e o RMSE de `16.55` para `16.26` (`1.7%`). O threshold e a janela de suavização
 foram calibrados nesta amostra e devem permanecer fixos ao validar novos dados.
 
 ---
